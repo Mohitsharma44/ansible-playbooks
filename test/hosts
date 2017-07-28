@@ -1,0 +1,12 @@
+[bastion]
+gw.cusp.nyu.edu
+
+[compute]
+compute.cusp.nyu.edu
+# 192.168.72.166 ansible_host=192.168.72.166 ansible_user="mohitsharma44"
+
+[servers]
+128.122.72.41 ansible_host=128.122.72.41 ansible_user="mohitsharma44"
+128.122.72.148 ansible_host=128.122.72.148 ansible_user="mohitsharma44"
+# 172.22.72.46 ansible_host=172.22.72.46 ansible_user="ubuntu"
+# 128.122.72.56 ansible_host=128.122.72.56 ansible_user="mohitsharma44"

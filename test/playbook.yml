@@ -1,0 +1,18 @@
+---
+- hosts: compute
+  gather_facts: False
+  tasks:
+    - name: Get files in a folder
+      find:
+        paths: "/projects/projects/project-audubon_uo/datamarts/2017-07-27_night/"
+        age: 360
+        size: "10m"
+      register: found_files
+
+    - name: Get latest file
+      set_fact:
+        latest_file: "{{ found_files.files | sort(attribute='mtime',reverse=true) | first }}"
+      register: recent_file
+
+    - name: print the recent file name
+      debug: var=recent_file
