@@ -4,7 +4,7 @@ My ansible playbooks for setup and monitoring servers and my workstation
 ### To Run:
 Example:
 ```
-$ ansible-playbook -i test/hosts test/playbook.yml
+$ ansible-playbook -i cusp_compute/hosts cusp_compute/recent_file/playbook.yml
 ```
 
 > Note:
