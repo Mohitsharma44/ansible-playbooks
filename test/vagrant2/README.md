@@ -41,3 +41,6 @@ ansible db -s -m service -a "name=mysql state=started enabled=yes" -i ./hosts
 
 #### Setup DB for user django
 `ansible db -s -m mysql_user -a "name=django host=% password=12345 priv=*.*:ALL state=present"` -i ./hosts
+
+-----
+That's it, you can now run django application and use the MariaDB.
