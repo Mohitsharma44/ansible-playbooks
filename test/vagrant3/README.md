@@ -1,5 +1,5 @@
-# In this environment, we will set up Ghost blogging platform behing Nginx
-which will act as a reverse proxy
+# In this environment, we will set up Ghost blogging platform behind Nginx
+# which will act as a reverse proxy
 
 ## First, Manual Install
 
