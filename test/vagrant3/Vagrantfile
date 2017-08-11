@@ -1,0 +1,24 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+
+VAGRANTFILE_API_VERSION = "2"
+
+Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
+  config.ssh.insert_key = false
+  config.vm.provider :virtualbox do |vb|
+    vb.customize ["modifyvm", :id, "--memory", "512"]
+  end
+
+  # Application Server 1
+  config.vm.define "ghostblog" do |app|
+    app.vm.hostname = "ghostblog.dev"
+    app.vm.box = "ubuntu/trusty64"
+    app.vm.network :private_network, ip: "192.168.60.10"
+    app.vm.network "forwarded_port", guest: 2368, host: 2368
+  end
+  #config.vm.provision "ansible" do |ansible|
+  #  ansible.playbook="playbook.yml"
+  #  # Run commands as root
+  #  ansible.sudo=true
+  #end
+end

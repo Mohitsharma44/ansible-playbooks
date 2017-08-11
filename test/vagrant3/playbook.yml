@@ -1,0 +1,126 @@
+---
+- hosts: ghost
+  vars_files:
+    - vars.yml
+
+  pre_tasks:
+    - name: Update cache
+      apt: update_cache=yes cache_valid_time=3600
+      become: yes
+
+    - name: Check if nodejs is installed
+      #apt: name=nodejs state=present only_upgrade=true
+      shell: >
+        dpkg --status {{ item }} | grep 'install ok installed'
+      with_items:
+        - nodejs
+      register: nodejs_check
+      ignore_errors: true
+      become: yes
+
+    - debug:
+        msg: "This is it: {{ nodejs_check }}"
+
+    - name: curl nodejs
+      shell: >
+        curl -sL https://deb.nodesource.com/setup_8.x | sudo -E bash -
+      when: nodejs_check.results[0].rc != 0
+
+  tasks:
+    - name: Installing unzip wget python build-essentials nodejs
+      apt:
+        name={{ item }}
+        state=installed
+      with_items:
+        - unzip
+        - wget
+        - python
+        - build-essential
+        - nodejs
+      become: yes
+
+    - name: Installing forever
+      npm:
+        name: forever
+        global: yes
+        state: present
+      become: yes
+
+    - name: Adding ghost user group
+      group:
+        name: "{{ ghost_user_group }}"
+        system: yes
+        state: present
+      become: yes
+
+    - name: Adding ghost user name
+      user:
+        name: "{{ ghost_user_name }}"
+        group: "{{ ghost_user_group }}"
+        home: "{{ ghost_user_home }}"
+        createhome: yes
+        shell: /bin/false
+        system: yes
+        state: present
+      become: yes
+
+    - name: Check if Ghost installation path exists
+      stat:
+        path: "{{ ghost_install_dir }}"
+      register: ghost_check_install_dir
+
+    - name: Create Ghost installation path if necessary
+      file:
+        dest: "{{ ghost_install_dir }}"
+        owner: "{{ ghost_user_name }}"
+        group: "{{ ghost_user_group }}"
+        mode: 0755
+        state: directory
+      become: yes
+      when: not ghost_check_install_dir.stat.exists
+
+    - name: Download Ghost
+      get_url:
+        url: "{{ ghost_fetch_url }}"
+        dest: "{{ ghost_fetch_dir }}/ghost.zip"
+      become: yes
+
+    - name: Unzip Ghost
+      unarchive:
+        src: "{{ ghost_fetch_dir }}/ghost.zip"
+        dest: "{{ ghost_install_dir }}"
+        owner: "{{ ghost_user_name }}"
+        group: "{{ ghost_user_group }}"
+        copy: no
+        creates: "{{ ghost_install_dir }}/index.js"
+      become: yes
+
+    - name: Installing Ghost configuration
+      template:
+        src: config.js.j2
+        dest: "{{ ghost_install_dir }}/config.js"
+        owner: "{{ ghost_user_name }}"
+        group: "{{ ghost_user_group }}"
+        mode: 0644
+      become: yes
+
+    - name: Install app dependencies defined in package.json
+      npm: path={{ ghost_install_dir }} global=yes state=latest
+      become: yes
+
+    - name: sqlite3 - install sqlite3 from source
+      command: npm install sqlite3 --from-source
+      args:
+        chdir: "{{ ghost_install_dir }}"
+        creates: "{{ ghost_install_dir }}/node_modules/sqlite3/lib/binding/node-v11-linux-x64/node_sqlite3.node"
+      become_user: "{{ ghost_user_name }}"
+      become: yes
+
+    - name: Get list of running node.js apps
+      command: forever list
+      register: forever_list
+      changed_when: false
+
+    - name: Run Ghost forever
+      command: forever start "{{ ghost_install_dir }}/index.js"
+      when: "forever_list.stdout.find('/var/www/ghost/index.js') == -1"
