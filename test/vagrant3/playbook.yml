@@ -164,7 +164,6 @@
       template:
         src: ghostblog.conf.j2
         dest: "{{ nginx_sites_available_dir }}/{{ ghost_nginx_conf_name }}"
-      notify: restart nginx
       with_items:
         "{{ nginx_reverse_proxies }}"
       become: yes
@@ -174,7 +173,12 @@
         src: "{{ nginx_sites_available_dir }}/{{ ghost_nginx_conf_name }}"
         dest: "{{ nginx_sites_enabled_dir }}/{{ ghost_nginx_conf_name }}"
         state: link
+      notify: restart nginx
       become: yes
+
+  post_tasks:
+    - name: wait for Nginx to come up
+      wait_for: 'host={{ inventory_hostname }} port=80 state=started timeout=80'
 
   handlers:
     - name: restart nginx
