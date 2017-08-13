@@ -15,7 +15,7 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
     app.vm.box = "ubuntu/trusty64"
     app.vm.network :private_network, ip: "192.168.60.10"
     app.vm.network "forwarded_port", guest: 2368, host: 2368
-    app.vm.network "forwarded_port", guest: 80, host: 80
+    app.vm.network "forwarded_port", guest: 80, host: 8000
     # Enable dynamic swap space to prevent out of memory crashes
     # https://superuser.com/questions/1058491/is-it-possible-to-create-a-swap-file-for-a-linux-guest-vm-managed-by-vagrant
     #app.vm.provision "shell", inline: "sudo apt install swapspace -y"
