@@ -1,59 +1,41 @@
 ---
+
 - hosts: ghost
+  gather_facts: no
   vars_files:
     - vars.yml
 
   pre_tasks:
-    - name: Update cache
+    - name: Wait 300 seconds for port 22 to become open and contain "OpenSSH"
+      wait_for:
+        port: 22
+        host: '{{ (ansible_ssh_host|default(ansible_host))|default(inventory_hostname) }}'
+        search_regex: OpenSSH
+        delay: 10
+      connection: local
+
+    - name: Gather Facts
+      setup:
+
+    - name: update cache
       apt: update_cache=yes cache_valid_time=3600
       become: yes
 
-    - name: Check if nodejs is installed
-      #apt: name=nodejs state=present only_upgrade=true
-      shell: >
-        dpkg --status {{ item }} | grep 'install ok installed'
-      with_items:
-        - nodejs
-      register: nodejs_check
-      ignore_errors: true
-      become: yes
-
-    - debug:
-        msg: "This is it: {{ nodejs_check }}"
-
-    - name: curl nodejs
-      shell: >
-        curl -sL https://deb.nodesource.com/setup_8.x | sudo -E bash -
-      when: nodejs_check.results[0].rc != 0
-
   tasks:
-    - name: Installing unzip wget python build-essentials nodejs
+    - name: Install swapspace
       apt:
-        name={{ item }}
-        state=installed
-      with_items:
-        - unzip
-        - wget
-        - python
-        - build-essential
-        - nodejs
-      become: yes
-
-    - name: Installing forever
-      npm:
-        name: forever
-        global: yes
+        name: swapspace
         state: present
       become: yes
 
-    - name: Adding ghost user group
+    - name: Adding ghost group
       group:
         name: "{{ ghost_user_group }}"
         system: yes
         state: present
       become: yes
 
-    - name: Adding ghost user name
+    - name: Adding ghost user
       user:
         name: "{{ ghost_user_name }}"
         group: "{{ ghost_user_group }}"
@@ -64,63 +46,139 @@
         state: present
       become: yes
 
-    - name: Check if Ghost installation path exists
+    - name: check if ghost blog path exists
       stat:
         path: "{{ ghost_install_dir }}"
-      register: ghost_check_install_dir
+      register: ghost_check_installation_dir
 
-    - name: Create Ghost installation path if necessary
+    - name: create directory for ghost blog if required
       file:
-        dest: "{{ ghost_install_dir }}"
+        path: "{{ ghost_install_dir }}"
         owner: "{{ ghost_user_name }}"
         group: "{{ ghost_user_group }}"
-        mode: 0755
+        mode: 0775
         state: directory
+        recurse: true
       become: yes
-      when: not ghost_check_install_dir.stat.exists
+      when: ghost_check_installation_dir.stat.exists==false
 
-    - name: Download Ghost
-      get_url:
-        url: "{{ ghost_fetch_url }}"
-        dest: "{{ ghost_fetch_dir }}/ghost.zip"
+    - name: check if .nvm exists
+      stat: path="{{ ansible_env.HOME }}/.nvm"
+      register: nvm_dir_check
+      ignore_errors: true
+
+    - name: install nvm if it doesn't exists
+      shell: >
+        curl -o- https://raw.githubusercontent.com/creationix/nvm/v0.33.2/install.sh | bash
+      when: nvm_dir_check.stat.exists==false
+
+    - name: source nvm in ~/.profile if it doesn't exist
+      lineinfile: >
+        dest=~/.profile
+        line="source ~/.nvm/nvm.sh"
+        create=yes
+      become_user: "{{ ansible_user_id }}"
       become: yes
+      register: sourcenvm
 
-    - name: Unzip Ghost
-      unarchive:
-        src: "{{ ghost_fetch_dir }}/ghost.zip"
-        dest: "{{ ghost_install_dir }}"
-        owner: "{{ ghost_user_name }}"
-        group: "{{ ghost_user_group }}"
-        copy: no
-        creates: "{{ ghost_install_dir }}/index.js"
-      become: yes
-
-    - name: Installing Ghost configuration
-      template:
-        src: config.js.j2
-        dest: "{{ ghost_install_dir }}/config.js"
-        owner: "{{ ghost_user_name }}"
-        group: "{{ ghost_user_group }}"
-        mode: 0644
-      become: yes
-
-    - name: Install app dependencies defined in package.json
-      npm: path={{ ghost_install_dir }} global=yes state=latest
-      become: yes
-
-    - name: sqlite3 - install sqlite3 from source
-      command: npm install sqlite3 --from-source
+    # https://stackoverflow.com/questions/22256884/not-possible-to-source-bashrc-with-ansible
+    - name: source nvm
+      shell: >
+        sudo -iu {{ ansible_user_id }} command -v nvm
+      register: nvm_check
       args:
+        warn: false
+      when: sourcenvm.changed==true
+
+    - name: install nodejs
+      shell: >
+        sudo -iu {{ ansible_user_id }} nvm install {{ node_version }}
+      register: nodejs_install_result
+      changed_when: nodejs_install_result.stderr.find("is already installed") < 0
+
+    - name: create node and npm symlinks
+      file:
+        src: "{{ nvm_path }}/{{ node_version }}/bin/{{ item.src }}"
+        dest: "{{ system_bin_path }}/{{ item.dest }}"
+        owner: "{{ ghost_user_name }}"
+        group: "{{ ghost_user_group }}"
+        state: link
+      with_items:
+        - {src: 'npm', dest: 'npm'}
+        - {src: 'node', dest: 'node'}
+      become: yes
+
+    - name: install packages via npm globally
+      npm:
+        name: "{{ item }}"
+        global: yes
+        state: present
+      with_items:
+        - sqlite3
+        - ghost-cli
+
+    - name: create ghost symlink
+      file:
+        src: "{{ nvm_path }}/{{ node_version }}/bin/ghost"
+        dest: "{{ system_bin_path }}/ghost"
+        owner: "{{ ghost_user_name }}"
+        group: "{{ ghost_user_group }}"
+        state: link
+      become: yes
+
+    - name: check if ghost blog exists
+      shell:
+        cmd:  ghost --version
         chdir: "{{ ghost_install_dir }}"
-        creates: "{{ ghost_install_dir }}/node_modules/sqlite3/lib/binding/node-v11-linux-x64/node_sqlite3.node"
       become_user: "{{ ghost_user_name }}"
       become: yes
+      register: ghostversion
+      changed_when:
+        - '"Ghost-CLI version" not in ghostversion.stdout'
 
-    - name: Get list of running node.js apps
-      command: forever list
-      register: forever_list
-      changed_when: false
+    - name: install ghost locally using ghost-cli and sqlite3
+      shell:
+        cmd:  ghost install local --url=http://{{ ghost_url.host }} --ip=0.0.0.0 --port={{ ghost_url.port }} --db=sqlite3 --no-prompt
+        chdir: "{{ ghost_install_dir }}"
+      become_user: "{{ ghost_user_name }}"
+      become: yes
+      when:
+        - '"Ghost Version" not in ghostversion.stdout'
 
-    - name: Run Ghost forever
-      command: forever start "{{ ghost_install_dir }}/index.js"
-      when: "forever_list.stdout.find('/var/www/ghost/index.js') == -1"
+    - name: Install Nginx
+      apt:
+        name: nginx
+        state: present
+      become: yes
+
+    - name: Remove default config
+      file:
+        path: "{{ item.src }}/default"
+        state: absent
+      with_items:
+        - { src: "{{ nginx_sites_available_dir }}" }
+        - { src: "{{ nginx_sites_enabled_dir }}" }
+      become: yes
+
+    - name: Create nginx config file for reverse-proxy
+      template:
+        src: ghostblog.conf.j2
+        dest: "{{ nginx_sites_available_dir }}/{{ ghost_nginx_conf_name }}"
+      notify: restart nginx
+      with_items:
+        "{{ nginx_reverse_proxies }}"
+      become: yes
+
+    - name: symlink nginx config to sites-enabled
+      file:
+        src: "{{ nginx_sites_available_dir }}/{{ ghost_nginx_conf_name }}"
+        dest: "{{ nginx_sites_enabled_dir }}/{{ ghost_nginx_conf_name }}"
+        state: link
+      become: yes
+
+  handlers:
+    - name: restart nginx
+      service:
+        name: nginx
+        state: restarted
+      become: yes
