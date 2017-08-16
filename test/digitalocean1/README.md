@@ -1,4 +1,4 @@
-## Ephemeral Infrastrcuture
+## Ephemeral Infrastructure
 
 ### Digital Ocean
 
