@@ -1,2 +1,4 @@
 ---
 # handlers file for nginx
+
+- include: nginx_handlers.yml

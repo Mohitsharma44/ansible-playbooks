@@ -3,7 +3,7 @@
 - hosts: all
   gather_facts: no
   vars_files:
-    - vars.yml
+    - vars/vars.yml
 
   pre_tasks:
     - name: Wait 300 seconds for host to come up

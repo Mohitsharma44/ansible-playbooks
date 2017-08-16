@@ -18,15 +18,17 @@
 - name: ghost site configuration for nginx
   template:
     src: ghostblog.conf.j2
-    dest: "{{nginx_sites_available_dir}}/{{nginx_reverse_proxies.config_name}}"
+    dest: "{{nginx_sites_available_dir}}/{{item.config_name}}"
   with_items:
     "{{nginx_reverse_proxies}}"
   become: yes
 
-- name: symlink configuration to nginx's sites-enabled
+- name: symlink configuration to nginxs sites-enabled
   file:
-    src: "{{nginx_sites_available_dir}}/{{nginx_reverse_proxies.config_name}}"
-    dest: "{{nginx_sites_enabled_dir}}/{{nginx_reverse_proxies.config_name}}"
+    src: "{{nginx_sites_available_dir}}/{{item.config_name}}"
+    dest: "{{nginx_sites_enabled_dir}}/{{item.config_name}}"
     state: link
   become: yes
   notify: restart nginx
+  with_items:
+    "{{nginx_reverse_proxies}}"
