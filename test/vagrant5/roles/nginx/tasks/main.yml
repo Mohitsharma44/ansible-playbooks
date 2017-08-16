@@ -1,4 +1,4 @@
 ---
 # tasks file for nginx
 
-include: install-nginx.yml
+- include: install-nginx.yml
