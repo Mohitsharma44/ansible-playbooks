@@ -1,0 +1,34 @@
+---
+
+# home path for vagrant user, cannot be used for
+# any other remote user https://stackoverflow.com/questions/33343215/how-to-get-remote-users-home-directory-in-ansible
+#local_home: "{{ lookup('env','HOME') }}"
+# /home/vagrant/.nvm/versions/node/v6.11.2/bin
+local_home: "/home/{{ansible_user_id}}"
+
+node_version: v6.11.2
+system_bin_path: /usr/local/bin
+nvm_path: "{{local_home}}/.nvm/versions/node"
+
+ghost_user_name: ghost
+ghost_user_group: ghost
+ghost_user_home: "{{ghost_install_dir | dirname}}"
+ghost_install_dir: /var/www/ghost
+ghost_version: 1.0.3
+sqlite3_version: 3.1.9
+
+ghost_nginx_conf_name: ghost
+ghost_link:
+  host: "127.0.0.1"
+  port: "2368"
+
+
+nginx_sites_available_dir: /etc/nginx/sites-available
+nginx_sites_enabled_dir: /etc/nginx/sites-enabled
+nginx_reverse_proxies:
+  - config_name: ghostproxy
+    backend_name: ghost
+    balancer_type: least_conn
+    ghost_url: "{{ghost_link.host}}"
+    backends:
+      - localhost:2368

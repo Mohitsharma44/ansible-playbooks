@@ -1,0 +1,45 @@
+---
+
+- hosts: all
+  gather_facts: no
+  vars_files:
+    - variables/vars.yml
+
+  handlers:
+    - include: handlers/nginx_handlers.yml
+
+  pre_tasks:
+    - name: Wait 300 seconds for host to come up
+      wait_for:
+        port: 22
+        host: '{{ansible_ssh_host|default(ansible_host)|default(inventory_hostname)}}'
+        search_regex: OpenSSH
+        delay: 10
+      connection: local
+
+    - name: Gather Facts
+      setup:
+
+    - name: Update apt cache if needed
+      apt:
+        update_cache: yes
+        cache_valid_time: 3600
+      become: yes
+
+  tasks:
+    - include: tasks/setup-host.yml
+      tags: setup_host
+    - include: tasks/install-node.yml
+      tags: install_node
+    - include: tasks/install-ghost.yml
+      tags: install_ghost
+    - include: tasks/install-nginx.yml
+      tags: install_nginx
+
+  post_tasks:
+    - name: waiting 30 seconds for nginx to come up
+      wait_for:
+        port: 80
+        host: "{{inventory_hostname}}"
+        state: started
+        timeout: 30
