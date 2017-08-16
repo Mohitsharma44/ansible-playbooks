@@ -13,11 +13,15 @@ Variables defined under `vars/main.yml`
 Variables required to be provided
 nginx_reverse_proxies:
 - config_name: `<name_for_your_config>`
-backend_name: `<name_for_your_server>`
-balancer_type: `<e.g. least_conn>`
-backend_url: `<hostname_to_send_requests>`
-backends:
-- `<host_name_to_send_requests>`:`<port_listening_for_requests>`
+
+  backend_name: `<name_for_your_server>`
+
+  balancer_type: `<e.g. least_conn>`
+
+  backend_url: `<hostname_to_send_requests>`
+
+  backends:
+  - `<host_name_to_send_requests>`:`<port_listening_for_requests>`
 
 
 Dependencies
