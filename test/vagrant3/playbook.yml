@@ -115,7 +115,7 @@
         state: present
       with_items:
         - sqlite3
-        - ghost-cli
+        - ghost-cli@1.0.3
 
     - name: create ghost symlink
       file:
