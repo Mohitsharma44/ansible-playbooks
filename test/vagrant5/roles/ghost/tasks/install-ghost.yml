@@ -1,0 +1,59 @@
+---
+
+- name: check if ghost blog path exists
+  stat:
+    path: "{{ghost_install_dir}}"
+  register: ghost_blogpath
+
+- name: create blog path if it doesnt exist
+  file:
+    path: "{{ghost_install_dir}}"
+    owner: "{{ghost_user_name}}"
+    group: "{{ghost_user_group}}"
+    state: directory
+    mode: 0775
+    recurse: true
+  become: yes
+  when: ghost_blogpath.stat.exists==false
+
+- name: install dependencies for ghost
+  npm:
+    name: "{{item.name}}"
+    global: yes
+    state: present
+    version: "{{item.version}}"
+  with_items:
+    - {name: 'sqlite3', version: "{{sqlite3_version}}"}
+    - {name: 'ghost-cli', version: "{{ghost_version}}"}
+
+- name: create ghost-cli symlink
+  file:
+    src: "{{nvm_path}}/{{node_version}}/bin/ghost"
+    dest: "{{system_bin_path}}/ghost"
+    owner: "{{ghost_user_name}}"
+    group: "{{ghost_user_group}}"
+    state: link
+  become: yes
+
+- name: check if ghost-cli exists
+  shell:
+    cmd: ghost --version
+    chdir: "{{ghost_install_dir}}"
+  args:
+    warn: false
+  become_user: "{{ghost_user_name}}"
+  become: yes
+  register: ghostversion
+  failed_when:
+    - '"Ghost-CLI version" not in ghostversion.stdout'
+  changed_when:
+    - '"Ghost-CLI version: {{ghost_version}}" not in ghostversion.stdout'
+
+- name: install ghost w/ sqlite3
+  shell:
+    cmd: ghost install local --url=http://{{ghost_link.host}} --ip=0.0.0.0 --port={{ghost_link.port}} --db=sqlite3 --no-prompt
+    chdir: "{{ghost_install_dir}}"
+  become_user: "{{ghost_user_name}}"
+  become: yes
+  when:
+    - '"Ghost Version" not in ghostversion.stdout'

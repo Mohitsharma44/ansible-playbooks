@@ -1,0 +1,8 @@
+---
+# defaults file for ghost
+ghost_user_name: ghost
+ghost_user_group: ghost
+ghost_install_dir: /var/www/ghost
+ghost_user_home: "{{ghost_install_dir | dirname}}"
+ghost_version: 1.0.3
+sqlite3_version: 3.1.9

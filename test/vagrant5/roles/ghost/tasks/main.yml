@@ -1,0 +1,4 @@
+---
+# tasks file for ghost
+
+include: install-ghost.yml
