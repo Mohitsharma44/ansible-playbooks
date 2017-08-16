@@ -1,0 +1,24 @@
+---
+
+- name: install swapspace
+  apt:
+    name: swapspace
+    state: present
+  become: yes
+
+- name: add user group
+  group:
+    name: "{{ghost_user_group}}"
+    system: yes
+    state: present
+  become: yes
+
+- name: add user
+  user:
+    name: "{{ghost_user_name}}"
+    group: "{{ghost_user_group}}"
+    home: "{{ghost_user_home}}"
+    shell: /bin/false
+    system: yes
+    state: present
+  become: yes

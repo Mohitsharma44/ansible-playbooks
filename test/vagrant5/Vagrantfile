@@ -1,0 +1,20 @@
+VAGRANTFILE_API_VERSION = "2"
+
+Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
+  config.ssh.insert_key = false
+  config.vm.provider :virtualbox do |vb|
+    vb.customize ["modifyvm", :id, "--memory", "512"]
+  end
+
+  # Ansible demo server1
+  config.vm.define "ansibledemo5" do |ansdemo5|
+    ansdemo5.vm.hostname = "ansdemo5.dev"
+    ansdemo5.vm.box = "ubuntu/trusty64"
+    ansdemo5.vm.network :private_network, ip: "192.168.60.12"
+    #ansdemo5.vm.provision "ansible" do |ansible|
+    #  ansible.playbook = "playbook.yml"
+    #  ansible.inventory_path = "hosts"
+    #  ansible.limit = "all"
+    #end
+  end
+end
