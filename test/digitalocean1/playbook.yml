@@ -3,7 +3,7 @@
 - hosts: do1
 
   vars:
-    do_token: a09157c9b1af0d82f5a5f4ccca2f29a19a6ceac449d51e2e8af29e415f9b5ad2
+    do_token: <your_digital_ocean_token>
 
   tasks:
     - name: Ensure SSH keys exists on DigitalOcean
