@@ -12,10 +12,10 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
     ansdemo5.vm.box = "ubuntu/trusty64"
     ansdemo5.vm.network :private_network, ip: "192.168.60.12"
     ansdemo5.vm.network "forward_port", guest: 80, host: 8000
-    #ansdemo5.vm.provision "ansible" do |ansible|
-    #  ansible.playbook = "playbook.yml"
-    #  ansible.inventory_path = "hosts"
-    #  ansible.limit = "all"
-    #end
+    ansdemo5.vm.provision "ansible" do |ansible|
+      ansible.playbook = "playbook.yml"
+      ansible.inventory_path = "hosts"
+      ansible.limit = "all"
+    end
   end
 end
