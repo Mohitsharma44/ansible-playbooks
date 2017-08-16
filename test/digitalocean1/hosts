@@ -1,2 +1,6 @@
 [do1]
 localhost ansible_connection=local
+
+[do1:vars]
+ansible_ssh_user=mohitsharma44
+ansible_ssh_private_key_file=~/.ssh/id_rsa
