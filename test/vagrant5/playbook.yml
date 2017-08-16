@@ -3,10 +3,7 @@
 - hosts: all
   gather_facts: no
   vars_files:
-    - variables/vars.yml
-
-  handlers:
-    - include: handlers/nginx_handlers.yml
+    - vars.yml
 
   pre_tasks:
     - name: Wait 300 seconds for host to come up
@@ -30,14 +27,8 @@
 
   roles:
     - nodejs
-
-  tasks:
-    - include: tasks/install-node.yml
-      tags: install_node
-    - include: tasks/install-ghost.yml
-      tags: install_ghost
-    - include: tasks/install-nginx.yml
-      tags: install_nginx
+    - ghost
+    - nginx
 
   post_tasks:
     - name: waiting 30 seconds for nginx to come up
