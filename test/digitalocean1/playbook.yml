@@ -1,7 +1,6 @@
 ---
 
-- hosts: do1
-
+- hosts: localhost
   vars:
     do_token: "{{ lookup('env', 'DO_API_KEY') }}"
 
@@ -37,4 +36,51 @@
       register: drop1
 
     - debug:
-        msg: "{{ drop1 }}"
+        msg: "{{ drop1.droplet.ip_address }}"
+
+    #- name: Delete the droplet
+    #  digital_ocean:
+    #    state: absent
+    #    command: droplet
+    #    name: ansible-test1
+    #    private_networking: yes
+    #    size_id: "512mb"
+    #    image_id: "ubuntu-16-04-x64"
+    #    region_id: "nyc1"
+    #    ssh_key_ids: "{{ my_ssh_key.ssh_key.id }}"
+    #    api_token: "{{ do_token }}"
+    #    unique_name: yes
+    #  register: drop1
+
+    - name: Add new host to our inventory
+      add_host:
+        name: "{{ drop1.droplet.ip_address }}"
+        groups: do1
+      when: drop1.droplet is defined
+
+- hosts: do1
+  remote_user: root
+  gather_facts: false
+
+  pre_tasks:
+
+    - name: wait for port 22 to become available
+      local_action: "wait_for port=22 host={{ inventory_hostname }}"
+
+    - name: install python2
+      raw: test -e /usr/bin/python || (apt -y update && apt install -y python-minimal)
+
+
+  tasks:
+
+    - name: Update cache
+      apt:
+        update_cache: yes
+
+    - name: Install python and nginx
+      apt:
+        name: "{{ item }}"
+        state: present
+      with_items:
+        - python
+        - nginx
