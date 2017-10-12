@@ -1,0 +1,7 @@
+---
+
+- hosts: all
+  gather_facts: no
+
+  roles:
+    - {role: Mohitsharma44.gorole, BUILD_FROM_SRC: false}
