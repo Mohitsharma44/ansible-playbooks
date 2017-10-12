@@ -3,11 +3,11 @@ VAGRANTFILE_API_VERSION = "2"
 Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
   config.ssh.insert_key = false
   config.vm.provider :virtualbox do |vb|
-    vb.customize ["modifyvm", :id, "memory", "512"]
+    vb.customize ["modifyvm", :id, "--memory", "1024"]
   end
 
   config.vm.define "go_install" do |goinstall|
-    goinstall.vm.hostname = "go_install"
+    goinstall.vm.hostname = "goinstall"
     goinstall.vm.box = "ubuntu/trusty64"
     goinstall.vm.network :private_network, ip: "192.168.60.13"
   end
