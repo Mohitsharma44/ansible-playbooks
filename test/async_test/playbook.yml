@@ -1,0 +1,23 @@
+---
+- hosts: all
+  gather_facts: no
+
+  tasks:
+    - name: 'APT - fire and forget task'
+      apt: name=emacs state=installed
+      async: 1000
+      poll: 0
+      register: apt_sleeper
+      become: yes
+      become_user: root
+
+    - name: 'APT - check on fire and forget task'
+      async_status: jid={{ apt_sleeper.ansible_job_id }}
+      register: job_result
+      until: job_result.finished
+      retries: 10
+      become: yes
+      become_user: root
+
+    - debug:
+        var: job_result

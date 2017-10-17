@@ -1,0 +1,14 @@
+VAGRANTFILE_API_VERSION = "2"
+
+Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
+  config.ssh.insert_key = false
+  config.vm.provider :virtualbox do |vb|
+    vb.customize ["modifyvm", :id, "--memory", "512"]
+  end
+
+  config.vm.define "async_test" do |goinstall|
+    goinstall.vm.hostname = "asynctest"
+    goinstall.vm.box = "ubuntu/trusty64"
+    goinstall.vm.network :private_network, ip: "192.168.60.14"
+  end
+end

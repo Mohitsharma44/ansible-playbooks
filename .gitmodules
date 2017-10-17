@@ -1,0 +1,3 @@
+[submodule "test/goinstall/roles/ansible-gorole"]
+	path = test/goinstall/roles/ansible-gorole
+	url = https://mohitsharma44@github.com/mohitsharma44/ansible-gorole
