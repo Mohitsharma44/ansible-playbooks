@@ -1,1 +1,3 @@
 ansible_env/
+*.vagrant/*
+*playbook.retry*
