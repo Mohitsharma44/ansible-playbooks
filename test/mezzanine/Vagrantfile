@@ -1,0 +1,18 @@
+VAGRANTFILE_API_VERSION = "2"
+
+Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
+  config.vm.box = "ubuntu/trusty64"
+  config.vm.network "private_network", ip: "192.168.23.10"
+  config.vm.provider :virtualbox do |vm|
+    vm.customize ["modifyvm", :id, "--memory", "2048"]
+  end
+
+  config.vm.define "mezzanine_vm" do |mvm|
+    mvm.vm.provision "ansible" do |ansible|
+      ansible.playbook = "playbook.yml"
+      ansible.inventory_path = "inventory"
+      #ansible.ask_vault_pass = true
+      ansible.vault_password_file = ".vault_pass"
+    end
+  end
+end
